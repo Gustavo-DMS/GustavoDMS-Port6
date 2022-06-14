@@ -431,8 +431,8 @@ def criarVistaGeral(con):
     try:
         cur = con.cursor()
         cur.execute("""DROP VIEW IF EXISTS Vista""")
-        cur.execute("""CREATE VIEW Vista(SEXO,TIPO_SERVICO,VALOR,ID_MÉDICO,NOME_MÉDICO,ID_ATENDIMENTO,NOME_PACIENTE,SERVICO) as 
-        SELECT p.sexo,t_serv.Tipo_servico,s.Valor,m.ID,m.Nome,at.ID,p.nome,s.Descricao
+        cur.execute("""CREATE VIEW Vista(SEXO,TIPO_SERVICO,VALOR,ID_MÉDICO,NOME_MÉDICO,ID_ATENDIMENTO,NOME_PACIENTE,SERVICO,TIPO_SERVICO_ID) as 
+        SELECT p.sexo,t_serv.Tipo_servico,s.Valor,m.ID,m.Nome,at.ID,p.nome,s.Descricao,t_serv.ID
         FROM atendimento_servico at_serv INNER JOIN servico s ON at_serv.Servico_ID = s.ID
         INNER JOIN tipo_servico t_serv ON t_serv.ID = s.Tipo_servico_ID
         INNER JOIN atendimento at ON at.ID = at_serv.Atendimento_ID
@@ -440,21 +440,52 @@ def criarVistaGeral(con):
         INNER JOIN medicos m ON m.ID = at_serv.Medicos_ID
         """)
     except Exception as e:
-        print("Ocorreu um erro na hora de gerar a view de pacientes:",e)
-        cur.rollback()
+        print("Ocorreu um erro na hora de gerar a view geral:",e)
+        con.rollback()
     else:
-        cur.commit()
+        con.commit()
         cur.close()
 
+def totalServicoGeral(con):
+    try:
+        df = pd.read_sql_query("""SELECT SEXO,TIPO_SERVICO,SUM(VALOR) AS VALOR_POR_TIPO_DE_SERVICO 
+        FROM Vista
+        GROUP BY SEXO,TIPO_SERVICO""",con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        print(df)
 
+def totalServicoEsp(con,id):
+    try:
+        df = pd.read_sql_query("""SELECT SEXO,TIPO_SERVICO,SUM(VALOR) AS VALOR_POR_TIPO_DE_SERVICO 
+        FROM Vista
+        WHERE TIPO_SERVICO_ID = {}
+        GROUP BY SEXO,TIPO_SERVICO""".format(id),con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        print(df)
+
+def servicoMedicoGeral(con):
+    try:
+        df = pd.read_sql_query("""SELECT ID_MÉDICO,NOME_MÉDICO,TIPO_SERVICO,SUM(VALOR) AS VALOR_POR_TIPO_DE_SERVICO 
+        FROM Vista
+        GROUP BY ID_MÉDICO,TIPO_SERVICO""",con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        print(df)
 
 
 def main():
     try:
         con = sqlite3.connect("Hospital.db")
         # ProduzirDados(con)
-        print(criarVistaGeral(con))
-
+        # criarVistaGeral(con)
+        # totalServicoGeral(con)
+        # totalServicoEsp(con,1)
+        servicoMedicoGeral(con)
     except Exception as e:
         print("Ocorreu o erro no final:",e)
     else:
