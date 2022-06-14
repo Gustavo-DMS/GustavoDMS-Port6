@@ -427,7 +427,7 @@ def ProduzirDados(con):
         print("Ocorreu o erro ao produzir dados:",e)
 
 
-def criarVistaServicoSexo(con):
+def criarVistaGeral(con):
     try:
         cur = con.cursor()
         cur.execute("""DROP VIEW IF EXISTS Vista""")
@@ -441,9 +441,10 @@ def criarVistaServicoSexo(con):
         """)
     except Exception as e:
         print("Ocorreu um erro na hora de gerar a view de pacientes:",e)
+        cur.rollback()
     else:
+        cur.commit()
         cur.close()
-        return (pd.read_sql_query("SELECT * FROM Vista", con))
 
 
 
