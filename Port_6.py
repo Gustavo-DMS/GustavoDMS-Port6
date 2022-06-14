@@ -453,7 +453,7 @@ def main():
     try:
         con = sqlite3.connect("Hospital.db")
         # ProduzirDados(con)
-        print(criarVistaServicoSexo(con))
+        print(criarVistaGeral(con))
 
     except Exception as e:
         print("Ocorreu o erro no final:",e)
