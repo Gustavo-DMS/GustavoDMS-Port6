@@ -417,7 +417,7 @@ def ProduzirDados(con):
         AdicionarFrequencias(6,'A',1,0,100,900,con)
         AdicionarFrequencias(7,'M',1,5,5,120,con)
         AdicionarAtendimentos_servico(1,1,'2015-05-22',1,con) #m regis
-        AdicionarAtendimentos_servico(2,1,'2015-05-22',1,con) #M regis
+        AdicionarAtendimentos_servico(1,2,'2015-05-22',1,con) #M regis
         AdicionarAtendimentos_servico(3,3,'2015-05-22',3,con) #m alosio ERRADO SEXO
         AdicionarAtendimentos_servico(4,6,'2019-05-22',1,con) #f bruna 
         AdicionarAtendimentos_servico(5,7,'2019-05-22',1,con) #f bruna ERRADO SEXO
@@ -431,8 +431,8 @@ def criarVistaGeral(con):
     try:
         cur = con.cursor()
         cur.execute("""DROP VIEW IF EXISTS Vista""")
-        cur.execute("""CREATE VIEW Vista(SEXO,TIPO_SERVICO,VALOR,ID_MÉDICO,NOME_MÉDICO,ID_ATENDIMENTO,NOME_PACIENTE,SERVICO,TIPO_SERVICO_ID) as 
-        SELECT p.sexo,t_serv.Tipo_servico,s.Valor,m.ID,m.Nome,at.ID,p.nome,s.Descricao,t_serv.ID
+        cur.execute("""CREATE VIEW Vista(SEXO,TIPO_SERVICO,VALOR,ID_MÉDICO,NOME_MÉDICO,ID_ATENDIMENTO,NOME_PACIENTE,SERVICO,TIPO_SERVICO_ID,VALOR_SERVICO) as 
+        SELECT p.sexo,t_serv.Tipo_servico,s.Valor,m.ID,m.Nome,at.ID,p.nome,s.Descricao,t_serv.ID,at_serv.Valor_do_servico
         FROM atendimento_servico at_serv INNER JOIN servico s ON at_serv.Servico_ID = s.ID
         INNER JOIN tipo_servico t_serv ON t_serv.ID = s.Tipo_servico_ID
         INNER JOIN atendimento at ON at.ID = at_serv.Atendimento_ID
@@ -454,7 +454,7 @@ def totalServicoGeral(con):
     except Exception as e:
         print('Ocorreu um erro:',e)
     else:
-        print(df)
+        return(df)
 
 def totalServicoEsp(con,id):
     try:
@@ -465,7 +465,7 @@ def totalServicoEsp(con,id):
     except Exception as e:
         print('Ocorreu um erro:',e)
     else:
-        print(df)
+        return(df)
 
 def servicoMedicoGeral(con):
     try:
@@ -475,17 +475,85 @@ def servicoMedicoGeral(con):
     except Exception as e:
         print('Ocorreu um erro:',e)
     else:
-        print(df)
+        return(df)
 
+def servicoMedicoEsp(con,id):
+    try:
+        df = pd.read_sql_query("""SELECT ID_MÉDICO,NOME_MÉDICO,TIPO_SERVICO,SUM(VALOR) AS VALOR_POR_TIPO_DE_SERVICO 
+        FROM Vista
+        WHERE ID_MÉDICO = {}
+        GROUP BY ID_MÉDICO,TIPO_SERVICO""".format(id),con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        return(df)
+
+def valorPorAtendimentoGeral(con):
+    try:
+        df = pd.read_sql_query("""SELECT ID_ATENDIMENTO,NOME_PACIENTE,SUM(VALOR) AS VALOR_POR_TIPO_DE_SERVICO 
+        FROM Vista
+        GROUP BY ID_MÉDICO,TIPO_SERVICO""",con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        return(df)
+
+def valorPorAtendimentoEsp(con,id):
+    try:
+        df = pd.read_sql_query("""SELECT ID_ATENDIMENTO,NOME_PACIENTE,NOME_MÉDICO,SERVICO,SUM(VALOR_SERVICO) as VALOR_TOTAL_DO_SERVIÇO 
+        FROM Vista
+        WHERE ID_ATENDIMENTO = {}
+        GROUP BY ID_ATENDIMENTO,SERVICO
+        """.format(id),con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        return(df)
+
+def contServicoPorMedico(con):
+    try:
+        df = pd.read_sql_query("""SELECT ID_MÉDICO,NOME_MÉDICO,TIPO_SERVICO,COUNT(SERVICO) AS QTDE_DE_SERVICO
+        FROM Vista
+        GROUP BY ID_MÉDICO,TIPO_SERVICO
+        """,con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        return(df)
+
+def contServicoPorMedicoEsp(con,id):
+    try:
+        df = pd.read_sql_query("""SELECT ID_MÉDICO,NOME_MÉDICO,TIPO_SERVICO,COUNT(SERVICO) AS QTDE_DE_SERVICO
+        FROM Vista
+        WHERE ID_MÉDICO = {}
+        GROUP BY ID_MÉDICO,TIPO_SERVICO
+        """.format(id),con)
+    except Exception as e:
+        print('Ocorreu um erro:',e)
+    else:
+        return(df)
 
 def main():
     try:
         con = sqlite3.connect("Hospital.db")
         # ProduzirDados(con)
-        # criarVistaGeral(con)
-        # totalServicoGeral(con)
-        # totalServicoEsp(con,1)
-        servicoMedicoGeral(con)
+        criarVistaGeral(con)
+        print(totalServicoGeral(con))
+        print('-------------------------------')
+        print(totalServicoEsp(con,1))
+        print('-------------------------------')
+        print(servicoMedicoGeral(con))
+        print('-------------------------------')
+        print(servicoMedicoEsp(con,1))
+        print('-------------------------------')
+        print(valorPorAtendimentoGeral(con))
+        print('-------------------------------')
+        print(valorPorAtendimentoEsp(con,1))
+        print('-------------------------------')
+        print(contServicoPorMedico(con))
+        print('-------------------------------')
+        print(contServicoPorMedicoEsp(con,1))
+        print('-------------------------------')
     except Exception as e:
         print("Ocorreu o erro no final:",e)
     else:
@@ -493,7 +561,3 @@ def main():
         print("O programa encerrou -------------------------------")
 
 main()
-
-
-
-#
